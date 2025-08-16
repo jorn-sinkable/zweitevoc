@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vocabulary Flashcard Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .stat {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            text-align: center;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .card-container {
+            perspective: 1000px;
+            height: 350px;
+            margin-bottom: 30px;
+        }
+
+        .flashcard {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .flashcard.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            font-size: 1.5em;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-front {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .card-back {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            transform: rotateY(180deg);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            min-width: 100px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .shuffle-btn {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .reset-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .hint {
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .keyboard-hints {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .key {
+            background: #f0f0f0;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .card-container {
+                height: 300px;
+            }
+
+            .card-face {
+                font-size: 1.2em;
+                padding: 20px;
+            }
+
+            button {
+                font-size: 0.9em;
+                padding: 12px 16px;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Vocabulary Flashcards</h1>
+            <p>Master your vocabulary with interactive flashcards!</p>
+        </div>
+
+        <div id="loading" class="loading">Loading flashcards...</div>
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="game" style="display: none;">
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label">Current Card</div>
+                    <div class="stat-value" id="current-card">1</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Total Cards</div>
+                    <div class="stat-value" id="total-cards">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Cards Viewed</div>
+                    <div class="stat-value" id="cards-viewed">0</div>
+                </div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress" style="width: 0%"></div>
+            </div>
+
+            <div class="card-container">
+                <div class="flashcard" id="flashcard">
+                    <div class="card-face card-front">
+                        <div id="word"></div>
+                    </div>
+                    <div class="card-face card-back">
+                        <div id="definition"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button id="prev-btn" onclick="previousCard()">← Previous</button>
+                <button id="flip-btn" onclick="flipCard()">Flip Card</button>
+                <button id="next-btn" onclick="nextCard()">Next →</button>
+            </div>
+
+            <div class="controls">
+                <button class="shuffle-btn" onclick="shuffleCards()">🔀 Shuffle</button>
+                <button class="reset-btn" onclick="resetProgress()">↺ Reset Progress</button>
+            </div>
+
+            <div class="hint">Click the card or press Space to flip</div>
+            
+            <div class="keyboard-hints">
+                <span><span class="key">Space</span> Flip</span>
+                <span><span class="key">←</span> Previous</span>
+                <span><span class="key">→</span> Next</span>
+                <span><span class="key">S</span> Shuffle</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Using CORS proxy to fetch the Google Sheet
+        const SHEET_ID = '2PACX-1vQldk9f7pc_0sYbHIcoM1rXzuFWBb9lXwgCVFKaI0hleVm1fYIJ31KI4VWXrWq7US7eq1q7_JRzQmiL';
+        const CORS_PROXY = 'https://corsproxy.io/?';
+        const SHEET_CSV_URL = `${CORS_PROXY}https://docs.google.com/spreadsheets/d/e/${SHEET_ID}/pub?output=csv`;
+        
+        let flashcards = [];
+        let currentIndex = 0;
+        let viewedCards = new Set();
+        let isFlipped = false;
+
+        // Load flashcards on page load
+        window.addEventListener('DOMContentLoaded', loadFlashcards);
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                flipCard();
+            } else if (e.code === 'ArrowLeft') {
+                previousCard();
+            } else if (e.code === 'ArrowRight') {
+                nextCard();
+            } else if (e.key.toLowerCase() === 's') {
+                shuffleCards();
+            }
+        });
+
+        async function loadFlashcards() {
+            // First try with CORS proxy
+            try {
+                console.log('Attempting to load from Google Sheets...');
+                const response = await fetch(SHEET_CSV_URL);
+                if (!response.ok) throw new Error('Failed to fetch with proxy');
+                
+                const text = await response.text();
+                flashcards = parseCSV(text);
+                
+                if (flashcards.length === 0) {
+                    throw new Error('No flashcards found in the sheet');
+                }
+                
+                console.log(`Loaded ${flashcards.length} flashcards successfully`);
+                initializeGame();
+            } catch (error) {
+                console.log('Failed to load from Google Sheets, using fallback data');
+                // Fallback to sample data if Google Sheets fails
+                useFallbackData();
+            }
+        }
+
+        function useFallbackData() {
+            // Sample vocabulary data as fallback
+            flashcards = [
+                { word: "Eloquent", definition: "Fluent or persuasive in speaking or writing" },
+                { word: "Ephemeral", definition: "Lasting for a very short time" },
+                { word: "Ubiquitous", definition: "Present, appearing, or found everywhere" },
+                { word: "Serendipity", definition: "The occurrence of events by chance in a happy way" },
+                { word: "Enigma", definition: "A person or thing that is mysterious or difficult to understand" },
+                { word: "Paradigm", definition: "A typical example or pattern of something" },
+                { word: "Quintessential", definition: "Representing the most perfect example of a quality" },
+                { word: "Mellifluous", definition: "Sweet or musical; pleasant to hear" },
+                { word: "Ineffable", definition: "Too great or extreme to be expressed in words" },
+                { word: "Sanguine", definition: "Optimistic or positive, especially in a difficult situation" }
+            ];
+            
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('error').innerHTML = `
+                <strong>Note:</strong> Could not connect to Google Sheets. Using sample vocabulary.<br>
+                This will work perfectly when deployed to GitHub Pages!
+            `;
+            
+            initializeGame();
+        }
+
+        function initializeGame() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+            document.getElementById('total-cards').textContent = flashcards.length;
+            displayCard();
+        }
+
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            const cards = [];
+            
+            // Skip header row if it exists
+            const startIndex = lines[0].toLowerCase().includes('word') ? 1 : 0;
+            
+            for (let i = startIndex; i < lines.length; i++) {
+                // Handle CSV parsing with potential commas in definitions
+                const match = lines[i].match(/^"?([^",]+)"?,\s*"?(.+)"?$/);
+                if (match) {
+                    cards.push({
+                        word: match[1].trim(),
+                        definition: match[2].trim().replace(/^"|"$/g, '')
+                    });
+                } else {
+                    // Simple split for basic CSV
+                    const parts = lines[i].split(',');
+                    if (parts.length >= 2 && parts[0].trim() && parts[1].trim()) {
+                        cards.push({
+                            word: parts[0].trim(),
+                            definition: parts.slice(1).join(',').trim()
+                        });
+                    }
+                }
+            }
+            
+            return cards;
+        }
+
+        function displayCard() {
+            if (flashcards.length === 0) return;
+            
+            const card = flashcards[currentIndex];
+            document.getElementById('word').textContent = card.word;
+            document.getElementById('definition').textContent = card.definition;
+            document.getElementById('current-card').textContent = currentIndex + 1;
+            
+            // Update viewed cards
+            viewedCards.add(currentIndex);
+            document.getElementById('cards-viewed').textContent = viewedCards.size;
+            
+            // Update progress bar
+            const progress = ((currentIndex + 1) / flashcards.length) * 100;
+            document.getElementById('progress').style.width = `${progress}%`;
+            
+            // Update button states
+            document.getElementById('prev-btn').disabled = currentIndex === 0;
+            document.getElementById('next-btn').disabled = currentIndex === flashcards.length - 1;
+            
+            // Reset flip state
+            isFlipped = false;
+            document.getElementById('flashcard').classList.remove('flipped');
+            
+            // Add fade-in animation
+            document.getElementById('flashcard').classList.add('fade-in');
+            setTimeout(() => {
+                document.getElementById('flashcard').classList.remove('fade-in');
+            }, 500);
+        }
+
+        function flipCard() {
+            isFlipped = !isFlipped;
+            document.getElementById('flashcard').classList.toggle('flipped');
+        }
+
+        function nextCard() {
+            if (currentIndex < flashcards.length - 1) {
+                currentIndex++;
+                displayCard();
+            }
+        }
+
+        function previousCard() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                displayCard();
+            }
+        }
+
+        function shuffleCards() {
+            // Fisher-Yates shuffle
+            for (let i = flashcards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [flashcards[i], flashcards[j]] = [flashcards[j], flashcards[i]];
+            }
+            currentIndex = 0;
+            displayCard();
+        }
+
+        function resetProgress() {
+            currentIndex = 0;
+            viewedCards.clear();
+            displayCard();
+        }
+    </script>
+</body>
+</html>
